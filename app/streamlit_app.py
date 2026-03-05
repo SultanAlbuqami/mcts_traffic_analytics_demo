@@ -1,7 +1,15 @@
 from __future__ import annotations
 
-import json
+import sys
 from pathlib import Path
+
+# Streamlit Cloud installs requirements.txt but does NOT run `pip install -e .`
+# This ensures the local src/ package is importable in both environments.
+_src_dir = Path(__file__).resolve().parents[1] / "src"
+if _src_dir.exists() and str(_src_dir) not in sys.path:
+    sys.path.insert(0, str(_src_dir))
+
+import json
 
 import altair as alt
 import pandas as pd
