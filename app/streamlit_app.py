@@ -157,9 +157,14 @@ required_files = [
 ]
 missing_files = [path for path in required_files if not path.exists()]
 if missing_files:
+    import os
     import subprocess
 
     with st.spinner("Building demo data — this takes ~60 seconds on first run..."):
+        # Ensure the subprocess can find the local src/ package regardless of
+        # whether `pip install -e .` was run (e.g. Streamlit Cloud).
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(_src_dir) + os.pathsep + env.get("PYTHONPATH", "")
         result = subprocess.run(
             [
                 sys.executable,
@@ -181,6 +186,7 @@ if missing_files:
             ],
             capture_output=True,
             text=True,
+            env=env,
         )
     if result.returncode != 0:
         st.error("Pipeline failed to build demo artifacts. See details below.")
