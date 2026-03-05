@@ -1,4 +1,7 @@
-# MCTS Traffic Safety - Governed Analytics Demo
+# MCTS Traffic Safety — Governed Analytics Demo
+
+> **100% synthetic data** (seed=42) · Offline-first · Portfolio-grade  
+> Version: `0.1.1` | License: Apache-2.0
 
 مشروع تحليلات مرورية محكوم الحوكمة يركز على الدمج بين المصادر، الجودة، التحليلات التنفيذية، والتسليم الجاهز لـ Power BI. الفكرة ليست بناء منتج ضخم، بل بناء مشروع صغير لكنه متماسك ويثبت القدرة على:
 
@@ -11,6 +14,62 @@
 - شرح الحوكمة والامتثال والقيود بوضوح
 
 > البيانات صناعية بالكامل `Synthetic` وآمنة للعرض.
+
+---
+
+## Navigation
+
+| Section | Link |
+|---------|------|
+| Demo in 5 Minutes | [↓ Quick Start](#quick-start) |
+| Architecture | [↓ below](#architecture) |
+| What This Proves | [↓ below](#what-this-demo-proves) |
+| Story One-Pager | [docs/story_one_pager.md](docs/story_one_pager.md) |
+| KPI Catalog | [docs/kpi_catalog.md](docs/kpi_catalog.md) |
+| Data Dictionary | [docs/data_dictionary.md](docs/data_dictionary.md) |
+| Governance | [docs/governance.md](docs/governance.md) |
+| Power BI Guide | [powerbi/README.md](powerbi/README.md) |
+| Architecture Overview | [docs/architecture_overview.md](docs/architecture_overview.md) |
+| Executive Playbook | [docs/executive_presentation_playbook.md](docs/executive_presentation_playbook.md) |
+| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Security | [SECURITY.md](SECURITY.md) |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) |
+| License | [LICENSE](LICENSE) |
+
+---
+
+## Architecture
+
+```
+Raw Sources (synthetic)
+  speed_sensors · violations · accidents · road_segments · weather
+        │
+        ▼
+  ingest.py          (traceability: source_system, record_hash, ingest_batch_id)
+        │
+        ▼
+  transform.py       (join, clean, daily road-segment aggregation)
+        │
+        ▼
+  quality.py         (rule-based + statistical quality checks)
+        │
+        ├──────────────────────┐
+        ▼                      ▼
+  model.py              scenario.py
+  (gradient boosting    (intervention ROI ranking)
+   risk prediction)
+        │                      │
+        └──────────┬───────────┘
+                   ▼
+         report.py + stakeholder_pack.py
+                   │
+        ┌──────────┴──────────┐
+        ▼                     ▼
+  streamlit_app.py      out/powerbi/*.csv
+  (dashboard)           (star schema + DAX measures)
+```
+
+---
 
 ## What This Demo Proves
 
@@ -40,6 +99,7 @@ source .venv/bin/activate
 ### 2) Install dependencies
 ```bash
 python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 python -m pip install -e .
 ```
 
@@ -139,12 +199,42 @@ out/                         Reports and Power BI handoff artifacts
 
 ## Supporting Docs
 
-- `docs/how_to_show_in_powerbi.md`
-- `docs/governance.md`
-- `docs/kpi_catalog.md`
-- `docs/architecture_overview.md`
-- `docs/saudi_compliance_reference.md`
-- `docs/ministerial_committee_alignment.md`
-- `docs/job_role_coverage.md`
-- `docs/executive_presentation_playbook.md`
-- `docs/analytics_standards.md`
+- [`docs/story_one_pager.md`](docs/story_one_pager.md) — Problem → Signal → Decision → Impact narrative
+- [`docs/data_dictionary.md`](docs/data_dictionary.md) — Auto-generated data dictionary with sensitivity classifications
+- [`docs/how_to_show_in_powerbi.md`](docs/how_to_show_in_powerbi.md)
+- [`powerbi/README.md`](powerbi/README.md) — Power BI model build starter pack + Tabular Editor scripts
+- [`docs/governance.md`](docs/governance.md)
+- [`docs/kpi_catalog.md`](docs/kpi_catalog.md)
+- [`docs/architecture_overview.md`](docs/architecture_overview.md)
+- [`docs/saudi_compliance_reference.md`](docs/saudi_compliance_reference.md)
+- [`docs/ministerial_committee_alignment.md`](docs/ministerial_committee_alignment.md)
+- [`docs/job_role_coverage.md`](docs/job_role_coverage.md)
+- [`docs/executive_presentation_playbook.md`](docs/executive_presentation_playbook.md)
+- [`docs/analytics_standards.md`](docs/analytics_standards.md)
+- [`docs/assets/README.md`](docs/assets/README.md) — How to safely add screenshots
+
+## Quality & CI
+
+```bash
+# Lint
+python -m ruff check .
+
+# Format check
+python -m ruff format . --check
+
+# Tests
+python -m pytest -q
+
+# Dependency audit (advisory)
+pip install pip-audit && pip-audit -r requirements.txt
+```
+
+CI runs all of the above automatically on every push. See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+## License / Security / Contributing
+
+- **License:** [Apache-2.0](LICENSE)
+- **Security:** See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+- **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md) for PR guide and standards.
+- **Changelog:** See [CHANGELOG.md](CHANGELOG.md) for version history.
+

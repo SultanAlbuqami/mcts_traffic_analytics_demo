@@ -28,7 +28,9 @@ def test_stakeholder_pack_contains_expected_sections() -> None:
         }
     )
 
-    text = build_stakeholder_pack(accidents, model_df, quality_gate="PASS", scenario_summary=scenario)
+    text = build_stakeholder_pack(
+        accidents, model_df, quality_gate="PASS", scenario_summary=scenario
+    )
 
     assert "Executive Board Brief" in text
     assert "Operations Command Brief" in text

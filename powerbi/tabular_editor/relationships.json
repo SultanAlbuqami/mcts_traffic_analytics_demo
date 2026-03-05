@@ -1,0 +1,78 @@
+{
+  "_comment": "Relationship definition reference for the MCTS Traffic Analytics Power BI model.",
+  "_note": "This JSON is for documentation reference only. Use Tabular Editor or Power BI Desktop Model View to apply.",
+  "relationships": [
+    {
+      "from_table": "fact_accident",
+      "from_column": "road_id",
+      "to_table": "dim_road",
+      "to_column": "road_id",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    },
+    {
+      "from_table": "fact_accident",
+      "from_column": "date",
+      "to_table": "dim_date",
+      "to_column": "date",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    },
+    {
+      "from_table": "fact_violation",
+      "from_column": "road_id",
+      "to_table": "dim_road",
+      "to_column": "road_id",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    },
+    {
+      "from_table": "fact_violation",
+      "from_column": "date",
+      "to_table": "dim_date",
+      "to_column": "date",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    },
+    {
+      "from_table": "fact_sensor",
+      "from_column": "road_id",
+      "to_table": "dim_road",
+      "to_column": "road_id",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    },
+    {
+      "from_table": "fact_sensor",
+      "from_column": "date",
+      "to_table": "dim_date",
+      "to_column": "date",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    },
+    {
+      "from_table": "fact_road_day",
+      "from_column": "road_id",
+      "to_table": "dim_road",
+      "to_column": "road_id",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    },
+    {
+      "from_table": "fact_road_day",
+      "from_column": "date",
+      "to_table": "dim_date",
+      "to_column": "date",
+      "cardinality": "ManyToOne",
+      "cross_filter_direction": "Single",
+      "is_active": true
+    }
+  ]
+}

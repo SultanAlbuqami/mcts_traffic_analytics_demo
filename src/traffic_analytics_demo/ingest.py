@@ -1,14 +1,18 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
+
 import pandas as pd
 
-from .utils import utc_now_iso, stable_hash
+from .utils import stable_hash, utc_now_iso
+
 
 @dataclass(frozen=True)
 class IngestMeta:
     ingest_batch_id: str
     extracted_at_utc: str
+
 
 def _add_traceability(df: pd.DataFrame, source_system: str, meta: IngestMeta) -> pd.DataFrame:
     df = df.copy()
@@ -18,10 +22,10 @@ def _add_traceability(df: pd.DataFrame, source_system: str, meta: IngestMeta) ->
     # record hash (based on business columns)
     business_cols = [c for c in df.columns if c not in ["record_hash"]]
     df["record_hash"] = [
-        stable_hash({c: row[c] for c in business_cols})
-        for _, row in df.iterrows()
+        stable_hash({c: row[c] for c in business_cols}) for _, row in df.iterrows()
     ]
     return df
+
 
 def load_sources(raw_dir: Path, ingest_batch_id: str) -> dict[str, pd.DataFrame]:
     meta = IngestMeta(ingest_batch_id=ingest_batch_id, extracted_at_utc=utc_now_iso())

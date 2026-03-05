@@ -22,16 +22,24 @@ def test_end_to_end_pipeline(tmp_path: Path) -> None:
 
     generate_all(
         raw_dir,
-        GenConfig(days=30, seed=7, road_segments=20, accidents=300, violations=1200, sensors_rows=4000),
+        GenConfig(
+            days=30, seed=7, road_segments=20, accidents=300, violations=1200, sensors_rows=4000
+        ),
     )
     sources = load_sources(raw_dir, ingest_batch_id="BTEST")
     processed = clean_and_integrate(sources)
 
-    assert {"source_system", "ingest_batch_id", "record_hash"}.issubset(processed["accidents"].columns)
-    assert {"region", "city", "road_type", "weather"}.issubset(processed["accidents"].columns)
-    assert {"daily_volume", "p95_speed", "total_violations", "weather_mode", "has_fatality"}.issubset(
-        processed["model_df"].columns
+    assert {"source_system", "ingest_batch_id", "record_hash"}.issubset(
+        processed["accidents"].columns
     )
+    assert {"region", "city", "road_type", "weather"}.issubset(processed["accidents"].columns)
+    assert {
+        "daily_volume",
+        "p95_speed",
+        "total_violations",
+        "weather_mode",
+        "has_fatality",
+    }.issubset(processed["model_df"].columns)
 
     results, summary = run_quality_checks(
         {

@@ -8,8 +8,7 @@ from traffic_analytics_demo.ai.providers.mock_provider import MockProvider
 from traffic_analytics_demo.config import RuntimeSettings
 
 _FALLBACK_WARNING = (
-    "AI gateway unavailable or misconfigured. "
-    "Showing deterministic offline analyst output."
+    "AI gateway unavailable or misconfigured. Showing deterministic offline analyst output."
 )
 
 

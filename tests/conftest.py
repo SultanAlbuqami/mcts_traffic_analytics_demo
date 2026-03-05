@@ -41,7 +41,9 @@ def isolated_runtime_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dic
 
 
 @pytest.fixture
-def prepared_demo_env(isolated_runtime_env: dict[str, Path], monkeypatch: pytest.MonkeyPatch) -> dict[str, Path]:
+def prepared_demo_env(
+    isolated_runtime_env: dict[str, Path], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, Path]:
     from traffic_analytics_demo.cli import main
 
     monkeypatch.setattr(

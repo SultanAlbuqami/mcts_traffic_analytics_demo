@@ -7,8 +7,7 @@ from typing import Any, Protocol
 class AIProvider(Protocol):
     name: str
 
-    def generate(self, prompt: str, snapshot: dict[str, Any]) -> str:
-        ...
+    def generate(self, prompt: str, snapshot: dict[str, Any]) -> str: ...
 
 
 @dataclass(frozen=True)

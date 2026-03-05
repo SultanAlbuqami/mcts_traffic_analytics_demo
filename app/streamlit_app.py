@@ -15,7 +15,9 @@ st.set_page_config(page_title="Traffic Safety Analytics", layout="wide")
 repo_root = Path(__file__).resolve().parents[1]
 paths = get_paths()
 settings = get_settings()
-processed_dir = paths.data_curated if (paths.data_curated / "model_df.csv").exists() else paths.data_processed
+processed_dir = (
+    paths.data_curated if (paths.data_curated / "model_df.csv").exists() else paths.data_processed
+)
 out_dir = paths.out
 powerbi_dir = paths.out_powerbi
 
@@ -88,7 +90,12 @@ def style_app() -> None:
 
 def build_weekly_trend(df: pd.DataFrame) -> pd.DataFrame:
     weekly = (
-        df.assign(week=pd.to_datetime(df["date_time"], utc=True, errors="coerce").dt.tz_convert(None).dt.to_period("W").astype(str))
+        df.assign(
+            week=pd.to_datetime(df["date_time"], utc=True, errors="coerce")
+            .dt.tz_convert(None)
+            .dt.to_period("W")
+            .astype(str)
+        )
         .groupby("week", as_index=False)
         .agg(
             accidents=("incident_id", "count"),
@@ -150,30 +157,48 @@ accidents = load_csv(processed_dir / "accidents.csv", parse_dates=["date_time"])
 roads = load_csv(processed_dir / "roads.csv")
 model_df = load_csv(processed_dir / "model_df.csv")
 holdout_path = out_dir / "model_holdout_predictions.csv"
-holdout_predictions = load_csv(holdout_path, parse_dates=["date"]) if holdout_path.exists() else pd.DataFrame()
+holdout_predictions = (
+    load_csv(holdout_path, parse_dates=["date"]) if holdout_path.exists() else pd.DataFrame()
+)
 
 quality_report = load_text(out_dir / "quality_report.md")
 model_report = load_text(out_dir / "model_report.md")
 executive_report = load_text(out_dir / "executive_report.md")
 diagnostic_report = load_text(out_dir / "diagnostic_report.md")
 scenario_report = load_text(out_dir / "scenario_report.md")
-solution_overview = load_text(out_dir / "solution_overview.md") if (out_dir / "solution_overview.md").exists() else ""
-data_dictionary = load_text(out_dir / "data_dictionary.md") if (out_dir / "data_dictionary.md").exists() else ""
-powerbi_notes = load_text(powerbi_dir / "model_notes.md") if (powerbi_dir / "model_notes.md").exists() else ""
-powerbi_measures = load_text(powerbi_dir / "measures.dax") if (powerbi_dir / "measures.dax").exists() else ""
+solution_overview = (
+    load_text(out_dir / "solution_overview.md")
+    if (out_dir / "solution_overview.md").exists()
+    else ""
+)
+data_dictionary = (
+    load_text(out_dir / "data_dictionary.md") if (out_dir / "data_dictionary.md").exists() else ""
+)
+powerbi_notes = (
+    load_text(powerbi_dir / "model_notes.md") if (powerbi_dir / "model_notes.md").exists() else ""
+)
+powerbi_measures = (
+    load_text(powerbi_dir / "measures.dax") if (powerbi_dir / "measures.dax").exists() else ""
+)
 governance_doc = load_text(repo_root / "docs" / "governance.md")
 architecture_doc = load_text(repo_root / "docs" / "architecture_overview.md")
 run_summary = load_json(out_dir / "run_summary.json")
 scenario_summary = load_csv(out_dir / "scenario_summary.csv")
-scenario_top_opportunities = load_csv(out_dir / "scenario_top_opportunities.csv", parse_dates=["date"])
+scenario_top_opportunities = load_csv(
+    out_dir / "scenario_top_opportunities.csv", parse_dates=["date"]
+)
 scenario_region_impact = load_csv(out_dir / "scenario_region_impact.csv")
 
 accidents["date"] = pd.to_datetime(accidents["date_time"], utc=True).dt.date
 model_df["date"] = pd.to_datetime(model_df["date"], errors="coerce").dt.date
 if not holdout_predictions.empty:
-    holdout_predictions["date"] = pd.to_datetime(holdout_predictions["date"], errors="coerce").dt.date
+    holdout_predictions["date"] = pd.to_datetime(
+        holdout_predictions["date"], errors="coerce"
+    ).dt.date
 if not scenario_top_opportunities.empty:
-    scenario_top_opportunities["date"] = pd.to_datetime(scenario_top_opportunities["date"], errors="coerce").dt.date
+    scenario_top_opportunities["date"] = pd.to_datetime(
+        scenario_top_opportunities["date"], errors="coerce"
+    ).dt.date
 
 with st.sidebar:
     st.subheader("Filters")
@@ -184,14 +209,16 @@ with st.sidebar:
     selected_road_type = st.selectbox("Road type", road_types)
     min_date = accidents["date"].min()
     max_date = accidents["date"].max()
-    selected_dates = st.date_input("Date window", value=(min_date, max_date), min_value=min_date, max_value=max_date)
+    selected_dates = st.date_input(
+        "Date window", value=(min_date, max_date), min_value=min_date, max_value=max_date
+    )
 
 filtered = accidents.copy()
 if selected_region != "All":
     filtered = filtered[filtered["region"] == selected_region]
 if selected_road_type != "All":
     filtered = filtered[filtered["road_type"] == selected_road_type]
-if isinstance(selected_dates, (tuple, list)) and len(selected_dates) == 2:
+if isinstance(selected_dates, tuple | list) and len(selected_dates) == 2:
     start_date, end_date = selected_dates
     filtered = filtered[(filtered["date"] >= start_date) & (filtered["date"] <= end_date)]
 
@@ -200,9 +227,11 @@ if selected_region != "All" and "region" in filtered_model_df.columns:
     filtered_model_df = filtered_model_df[filtered_model_df["region"] == selected_region]
 if selected_road_type != "All" and "road_type" in filtered_model_df.columns:
     filtered_model_df = filtered_model_df[filtered_model_df["road_type"] == selected_road_type]
-if isinstance(selected_dates, (tuple, list)) and len(selected_dates) == 2:
+if isinstance(selected_dates, tuple | list) and len(selected_dates) == 2:
     start_date, end_date = selected_dates
-    filtered_model_df = filtered_model_df[(filtered_model_df["date"] >= start_date) & (filtered_model_df["date"] <= end_date)]
+    filtered_model_df = filtered_model_df[
+        (filtered_model_df["date"] >= start_date) & (filtered_model_df["date"] <= end_date)
+    ]
 
 filtered_holdout = holdout_predictions.copy()
 if not filtered_holdout.empty:
@@ -210,9 +239,11 @@ if not filtered_holdout.empty:
         filtered_holdout = filtered_holdout[filtered_holdout["region"] == selected_region]
     if selected_road_type != "All":
         filtered_holdout = filtered_holdout[filtered_holdout["road_type"] == selected_road_type]
-    if isinstance(selected_dates, (tuple, list)) and len(selected_dates) == 2:
+    if isinstance(selected_dates, tuple | list) and len(selected_dates) == 2:
         start_date, end_date = selected_dates
-        filtered_holdout = filtered_holdout[(filtered_holdout["date"] >= start_date) & (filtered_holdout["date"] <= end_date)]
+        filtered_holdout = filtered_holdout[
+            (filtered_holdout["date"] >= start_date) & (filtered_holdout["date"] <= end_date)
+        ]
 
 filtered_scenario_opportunities = scenario_top_opportunities.copy()
 if not filtered_scenario_opportunities.empty:
@@ -224,7 +255,7 @@ if not filtered_scenario_opportunities.empty:
         filtered_scenario_opportunities = filtered_scenario_opportunities[
             filtered_scenario_opportunities["road_type"] == selected_road_type
         ]
-    if isinstance(selected_dates, (tuple, list)) and len(selected_dates) == 2:
+    if isinstance(selected_dates, tuple | list) and len(selected_dates) == 2:
         start_date, end_date = selected_dates
         filtered_scenario_opportunities = filtered_scenario_opportunities[
             (filtered_scenario_opportunities["date"] >= start_date)
@@ -246,14 +277,19 @@ injuries = int(filtered["injuries"].sum())
 severe_count = int(filtered["severity"].isin(["Severe", "Fatal"]).sum())
 severe_rate = (severe_count / total_accidents) if total_accidents else 0.0
 
-quality_gate_line = next((line for line in quality_report.splitlines() if "Overall gate" in line), "- Overall gate: unknown")
+quality_gate_line = next(
+    (line for line in quality_report.splitlines() if "Overall gate" in line),
+    "- Overall gate: unknown",
+)
 dq_gate_value = quality_gate_line.split("**")[1] if "**" in quality_gate_line else "unknown"
 best_scenario = scenario_summary.sort_values(
     ["avg_risk_reduction", "high_risk_road_days_reduced"],
     ascending=False,
 ).iloc[0]["scenario"]
 successful_steps = sum(step.get("status") == "SUCCESS" for step in run_summary.get("steps", []))
-latest_run_duration = sum(float(step.get("duration_seconds") or 0.0) for step in run_summary.get("steps", []))
+latest_run_duration = sum(
+    float(step.get("duration_seconds") or 0.0) for step in run_summary.get("steps", [])
+)
 top_region = (
     filtered.groupby("region", as_index=False)
     .agg(accidents=("incident_id", "count"))
@@ -272,8 +308,26 @@ metric_cols[3].metric("Severe Rate", f"{severe_rate:.1%}")
 metric_cols[4].metric("DQ Gate", dq_gate_value)
 metric_cols[5].metric("Best Action", best_scenario)
 
-tab_overview, tab_hotspots, tab_diagnostics, tab_actions, tab_quality, tab_model, tab_ai, tab_delivery = st.tabs(
-    ["Overview", "Hotspots", "Diagnostics", "Interventions", "Quality", "Model", "AI Analyst", "Power BI & Governance"]
+(
+    tab_overview,
+    tab_hotspots,
+    tab_diagnostics,
+    tab_actions,
+    tab_quality,
+    tab_model,
+    tab_ai,
+    tab_delivery,
+) = st.tabs(
+    [
+        "Overview",
+        "Hotspots",
+        "Diagnostics",
+        "Interventions",
+        "Quality",
+        "Model",
+        "AI Analyst",
+        "Power BI & Governance",
+    ]
 )
 
 with tab_overview:
@@ -310,7 +364,12 @@ with tab_overview:
 
         with right:
             st.subheader("Severity mix")
-            severity_mix = filtered["severity"].value_counts().rename_axis("severity").reset_index(name="count")
+            severity_mix = (
+                filtered["severity"]
+                .value_counts()
+                .rename_axis("severity")
+                .reset_index(name="count")
+            )
             severity_chart = (
                 alt.Chart(severity_mix)
                 .mark_bar(cornerRadiusTopLeft=8, cornerRadiusTopRight=8)
@@ -344,7 +403,9 @@ with tab_overview:
             )
             .sort_values(["fatalities", "accidents"], ascending=False)
         )
-        region_summary["severe_rate"] = (region_summary["severe"] / region_summary["accidents"]).fillna(0.0)
+        region_summary["severe_rate"] = (
+            region_summary["severe"] / region_summary["accidents"]
+        ).fillna(0.0)
         st.dataframe(region_summary, width="stretch", hide_index=True)
 
         action_highlight = scenario_summary.sort_values(
@@ -367,7 +428,9 @@ with tab_overview:
 
 with tab_hotspots:
     st.subheader("Operational hotspot ranking")
-    hotspot_view = hotspots[hotspots["accidents"] >= 20].sort_values(["severe_rate", "fatalities"], ascending=False)
+    hotspot_view = hotspots[hotspots["accidents"] >= 20].sort_values(
+        ["severe_rate", "fatalities"], ascending=False
+    )
     bubble = (
         alt.Chart(hotspot_view.head(25))
         .mark_circle(opacity=0.78, stroke="#13212c", strokeWidth=0.6)
@@ -375,7 +438,9 @@ with tab_hotspots:
             x=alt.X("accidents:Q", title="Accidents"),
             y=alt.Y("severe_rate:Q", title="Severe rate"),
             size=alt.Size("fatalities:Q", title="Fatalities"),
-            color=alt.Color("road_type:N", scale=alt.Scale(range=["#1f5c56", "#a5402d", "#d9c9a0"])),
+            color=alt.Color(
+                "road_type:N", scale=alt.Scale(range=["#1f5c56", "#a5402d", "#d9c9a0"])
+            ),
             tooltip=[
                 alt.Tooltip("road_id:N", title="Road"),
                 alt.Tooltip("region:N", title="Region"),
@@ -396,7 +461,9 @@ with tab_diagnostics:
     st.subheader("Diagnostic / root-cause style view")
     left, right = st.columns([1.1, 0.9])
     with left:
-        if {"region", "violations_per_1000_volume", "severe_rate", "daily_volume"}.issubset(filtered_model_df.columns):
+        if {"region", "violations_per_1000_volume", "severe_rate", "daily_volume"}.issubset(
+            filtered_model_df.columns
+        ):
             diag_region = (
                 filtered_model_df.groupby("region", as_index=False)
                 .agg(
@@ -413,12 +480,18 @@ with tab_diagnostics:
                 .encode(
                     x=alt.X("region:N", sort="-y", title="Region"),
                     y=alt.Y("avg_severe_rate:Q", title="Average severe rate"),
-                    color=alt.Color("avg_violations_per_1000_volume:Q", scale=alt.Scale(scheme="oranges")),
+                    color=alt.Color(
+                        "avg_violations_per_1000_volume:Q", scale=alt.Scale(scheme="oranges")
+                    ),
                     tooltip=[
                         alt.Tooltip("region:N", title="Region"),
                         alt.Tooltip("road_days:Q", title="Road-days"),
                         alt.Tooltip("avg_severe_rate:Q", title="Avg Severe Rate", format=".2%"),
-                        alt.Tooltip("avg_violations_per_1000_volume:Q", title="Violations / 1000 Volume", format=".2f"),
+                        alt.Tooltip(
+                            "avg_violations_per_1000_volume:Q",
+                            title="Violations / 1000 Volume",
+                            format=".2f",
+                        ),
                         alt.Tooltip("avg_daily_volume:Q", title="Avg Daily Volume", format=".1f"),
                     ],
                 )
@@ -442,7 +515,9 @@ with tab_actions:
                 tooltip=[
                     alt.Tooltip("scenario:N", title="Scenario"),
                     alt.Tooltip("avg_risk_reduction:Q", title="Avg Risk Reduction", format=".4f"),
-                    alt.Tooltip("high_risk_road_days_reduced:Q", title="High-Risk Road-Days Reduced"),
+                    alt.Tooltip(
+                        "high_risk_road_days_reduced:Q", title="High-Risk Road-Days Reduced"
+                    ),
                     alt.Tooltip("high_risk_reduction_rate:Q", title="Reduction Rate", format=".2%"),
                 ],
             )
@@ -454,7 +529,9 @@ with tab_actions:
         selected_scenario = st.selectbox("Scenario package", scenario_options)
         scenario_card = scenario_summary[scenario_summary["scenario"] == selected_scenario].iloc[0]
         st.metric("Avg risk reduction", f"{scenario_card['avg_risk_reduction']:.4f}")
-        st.metric("High-risk road-days reduced", f"{int(scenario_card['high_risk_road_days_reduced'])}")
+        st.metric(
+            "High-risk road-days reduced", f"{int(scenario_card['high_risk_road_days_reduced'])}"
+        )
         st.metric("Reduction rate", f"{scenario_card['high_risk_reduction_rate']:.2%}")
         st.markdown(
             "Use this view to explain what the analytics suggests as the highest-leverage action package, "
@@ -596,16 +673,33 @@ with tab_delivery:
         run_meta = pd.DataFrame(
             [
                 {"attribute": "Pipeline status", "value": run_summary.get("status", "unknown")},
-                {"attribute": "Pipeline name", "value": run_summary.get("pipeline_name", "unknown")},
-                {"attribute": "Run started (UTC)", "value": run_summary.get("run_started_at_utc", "unknown")},
-                {"attribute": "Run finished (UTC)", "value": run_summary.get("run_finished_at_utc", "unknown")},
-                {"attribute": "Configured days", "value": run_summary.get("metadata", {}).get("days", "unknown")},
-                {"attribute": "Configured seed", "value": run_summary.get("metadata", {}).get("seed", "unknown")},
+                {
+                    "attribute": "Pipeline name",
+                    "value": run_summary.get("pipeline_name", "unknown"),
+                },
+                {
+                    "attribute": "Run started (UTC)",
+                    "value": run_summary.get("run_started_at_utc", "unknown"),
+                },
+                {
+                    "attribute": "Run finished (UTC)",
+                    "value": run_summary.get("run_finished_at_utc", "unknown"),
+                },
+                {
+                    "attribute": "Configured days",
+                    "value": run_summary.get("metadata", {}).get("days", "unknown"),
+                },
+                {
+                    "attribute": "Configured seed",
+                    "value": run_summary.get("metadata", {}).get("seed", "unknown"),
+                },
             ]
         )
         run_meta["value"] = run_meta["value"].astype(str)
         st.dataframe(run_meta, width="stretch", hide_index=True)
-        powerbi_files = sorted(path.name for path in powerbi_dir.iterdir()) if powerbi_dir.exists() else []
+        powerbi_files = (
+            sorted(path.name for path in powerbi_dir.iterdir()) if powerbi_dir.exists() else []
+        )
         st.dataframe(pd.DataFrame({"asset": powerbi_files}), width="stretch", hide_index=True)
         if powerbi_notes:
             st.markdown(powerbi_notes)

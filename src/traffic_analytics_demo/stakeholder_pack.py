@@ -16,7 +16,7 @@ def build_stakeholder_pack(
 
     total_accidents = int(len(acc))
     total_fatalities = int(acc["fatalities"].sum())
-    total_injuries = int(acc["injuries"].sum())
+    int(acc["injuries"].sum())
     severe_count = int(acc["severity"].isin(["Severe", "Fatal"]).sum())
     severe_rate = (severe_count / total_accidents) if total_accidents else 0.0
 
@@ -42,9 +42,13 @@ def build_stakeholder_pack(
         .head(10)
     )
 
-    model_positive_rate = float(model_df["has_fatality"].mean()) if "has_fatality" in model_df.columns else 0.0
+    model_positive_rate = (
+        float(model_df["has_fatality"].mean()) if "has_fatality" in model_df.columns else 0.0
+    )
     avg_violation_intensity = (
-        float(model_df["violations_per_1000_volume"].mean()) if "violations_per_1000_volume" in model_df.columns else 0.0
+        float(model_df["violations_per_1000_volume"].mean())
+        if "violations_per_1000_volume" in model_df.columns
+        else 0.0
     )
 
     best_scenario_text = "n/a"
@@ -70,7 +74,9 @@ def build_stakeholder_pack(
     lines.append(f"- Quality gate status: **{quality_gate}**")
     lines.append(f"- Best intervention package: **{best_scenario_text}**")
     lines.append("")
-    lines.append("Decision note: prioritize funding and enforcement in top-risk region while preserving governance controls.")
+    lines.append(
+        "Decision note: prioritize funding and enforcement in top-risk region while preserving governance controls."
+    )
     lines.append("")
     lines.append("## 2) Operations Command Brief")
     lines.append(f"- Leading risk region: **{leading_region}**")
@@ -85,24 +91,42 @@ def build_stakeholder_pack(
             f"{int(row['accidents'])} | {int(row['severe'])} | {int(row['fatalities'])} |"
         )
     lines.append("")
-    lines.append("Action note: use hotspot + exposure + violation intensity jointly for deployment decisions.")
+    lines.append(
+        "Action note: use hotspot + exposure + violation intensity jointly for deployment decisions."
+    )
     lines.append("")
     lines.append("## 3) Governance and Compliance Brief")
-    lines.append("- Data is synthetic in this demo; no personal data should be used without legal basis in production.")
-    lines.append("- Traceability fields (`source_system`, `ingest_batch_id`, `record_hash`) are required controls.")
-    lines.append("- Release of dashboards should be conditioned on quality gate and documented assumptions.")
+    lines.append(
+        "- Data is synthetic in this demo; no personal data should be used without legal basis in production."
+    )
+    lines.append(
+        "- Traceability fields (`source_system`, `ingest_batch_id`, `record_hash`) are required controls."
+    )
+    lines.append(
+        "- Release of dashboards should be conditioned on quality gate and documented assumptions."
+    )
     lines.append("")
     lines.append("## 4) Data & Analytics Team Brief")
     lines.append("- Reproducible pipeline path: raw -> staged -> curated -> reporting.")
-    lines.append("- Validate model limitations and group-level metrics before policy recommendations.")
-    lines.append("- Track drift, calibration, and quality trends across refresh cycles in production.")
+    lines.append(
+        "- Validate model limitations and group-level metrics before policy recommendations."
+    )
+    lines.append(
+        "- Track drift, calibration, and quality trends across refresh cycles in production."
+    )
     lines.append("")
     lines.append("## 5) Assumptions and Limitations")
     lines.append("- Synthetic data and simplified operational assumptions.")
     lines.append("- Not a substitute for legal/regulatory review in real deployments.")
     lines.append("")
     lines.append("## 6) Ministerial Committee Reporting Lens")
-    lines.append("- Supports periodic reporting readiness to economic/development governance bodies through standardized metrics.")
-    lines.append("- Enables cross-entity performance monitoring using shared KPI definitions and traceability controls.")
-    lines.append("- Helps reduce initiative conflicts by aligning strategy, diagnostics, and intervention outputs in one governed pack.")
+    lines.append(
+        "- Supports periodic reporting readiness to economic/development governance bodies through standardized metrics."
+    )
+    lines.append(
+        "- Enables cross-entity performance monitoring using shared KPI definitions and traceability controls."
+    )
+    lines.append(
+        "- Helps reduce initiative conflicts by aligning strategy, diagnostics, and intervention outputs in one governed pack."
+    )
     return "\n".join(lines)

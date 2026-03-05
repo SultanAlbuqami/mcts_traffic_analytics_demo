@@ -146,7 +146,9 @@ def cmd_report(args: argparse.Namespace) -> None:
         if "**" in gate_line:
             quality_gate = gate_line.split("**")[1]
     scenario_summary_path = paths.out / "scenario_summary.csv"
-    scenario_summary = pd.read_csv(scenario_summary_path) if scenario_summary_path.exists() else None
+    scenario_summary = (
+        pd.read_csv(scenario_summary_path) if scenario_summary_path.exists() else None
+    )
 
     stakeholder_pack = build_stakeholder_pack(
         accidents=accidents,
@@ -339,11 +341,15 @@ def build_parser() -> argparse.ArgumentParser:
     generate_parser.add_argument("--sensors-rows", type=int, default=default_gen.sensors_rows)
     generate_parser.set_defaults(func=cmd_generate_data)
 
-    pipeline_parser = sub.add_parser("run-pipeline", help="Ingest + clean + integrate to staged/curated datasets")
+    pipeline_parser = sub.add_parser(
+        "run-pipeline", help="Ingest + clean + integrate to staged/curated datasets"
+    )
     pipeline_parser.add_argument("--batch-id", type=str, default=None)
     pipeline_parser.set_defaults(func=cmd_run_pipeline)
 
-    quality_parser = sub.add_parser("quality", help="Run data quality checks and write markdown report")
+    quality_parser = sub.add_parser(
+        "quality", help="Run data quality checks and write markdown report"
+    )
     quality_parser.set_defaults(func=cmd_quality)
 
     model_parser = sub.add_parser("model", help="Train a predictive model and write model outputs")
@@ -352,10 +358,14 @@ def build_parser() -> argparse.ArgumentParser:
     report_parser = sub.add_parser("report", help="Build executive KPI report")
     report_parser.set_defaults(func=cmd_report)
 
-    diagnostic_parser = sub.add_parser("diagnostics", help="Build diagnostic / root-cause style report")
+    diagnostic_parser = sub.add_parser(
+        "diagnostics", help="Build diagnostic / root-cause style report"
+    )
     diagnostic_parser.set_defaults(func=cmd_diagnostics)
 
-    scenario_parser = sub.add_parser("scenarios", help="Build prescriptive scenario-analysis outputs")
+    scenario_parser = sub.add_parser(
+        "scenarios", help="Build prescriptive scenario-analysis outputs"
+    )
     scenario_parser.set_defaults(func=cmd_scenarios)
 
     powerbi_parser = sub.add_parser("export-powerbi", help="Export star schema CSVs for Power BI")

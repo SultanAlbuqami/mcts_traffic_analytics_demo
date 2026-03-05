@@ -3,14 +3,14 @@ from __future__ import annotations
 import json
 import logging
 import traceback
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Iterator
+from typing import Any
 
 from .utils import utc_now_iso
-
 
 LOGGER_NAME = "traffic_analytics_demo"
 
@@ -49,7 +49,9 @@ class StepRecord:
 
 
 class PipelineRunTracker:
-    def __init__(self, output_dir: Path, pipeline_name: str, logger: logging.Logger | None = None) -> None:
+    def __init__(
+        self, output_dir: Path, pipeline_name: str, logger: logging.Logger | None = None
+    ) -> None:
         self.output_dir = output_dir
         self.pipeline_name = pipeline_name
         self.logger = logger or logging.getLogger(LOGGER_NAME)
@@ -70,7 +72,11 @@ class PipelineRunTracker:
             yield
         except Exception as exc:
             record.status = "FAILED"
-            record.details = {**record.details, "error": str(exc), "traceback": traceback.format_exc(limit=8)}
+            record.details = {
+                **record.details,
+                "error": str(exc),
+                "traceback": traceback.format_exc(limit=8),
+            }
             raise
         else:
             record.status = "SUCCESS"

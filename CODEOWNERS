@@ -1,0 +1,18 @@
+# CODEOWNERS
+# GitHub will automatically request reviews from these owners for matching paths.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+*                                       @SultanAlbuqami
+
+# Core analytics pipeline
+src/traffic_analytics_demo/             @SultanAlbuqami
+
+# Governance documentation
+docs/                                   @SultanAlbuqami
+SECURITY.md                             @SultanAlbuqami
+
+# CI / packaging
+.github/                                @SultanAlbuqami
+pyproject.toml                          @SultanAlbuqami
+Dockerfile                              @SultanAlbuqami

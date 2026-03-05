@@ -46,7 +46,9 @@ def build_executive_report(accidents: pd.DataFrame, model_df: pd.DataFrame) -> s
         )
         .sort_values(["fatalities", "accidents"], ascending=False)
     )
-    by_region["severe_rate"] = (by_region["severe"] / by_region["accidents"]).replace([np.inf, np.nan], 0)
+    by_region["severe_rate"] = (by_region["severe"] / by_region["accidents"]).replace(
+        [np.inf, np.nan], 0
+    )
 
     by_road = acc.groupby(["road_id", "region", "city", "road_type"], as_index=False).agg(
         accidents=("incident_id", "count"),
@@ -54,7 +56,11 @@ def build_executive_report(accidents: pd.DataFrame, model_df: pd.DataFrame) -> s
         fatalities=("fatalities", "sum"),
     )
     by_road["severe_rate"] = (by_road["severe"] / by_road["accidents"]).replace([np.inf, np.nan], 0)
-    hotspots = by_road[by_road["accidents"] >= 20].sort_values(["severe_rate", "fatalities"], ascending=False).head(10)
+    hotspots = (
+        by_road[by_road["accidents"] >= 20]
+        .sort_values(["severe_rate", "fatalities"], ascending=False)
+        .head(10)
+    )
 
     signal_candidates = [
         "mean_speed",
@@ -98,7 +104,9 @@ def build_executive_report(accidents: pd.DataFrame, model_df: pd.DataFrame) -> s
     lines.append("| Week | Accidents | Severe | Fatalities |")
     lines.append("|---|---:|---:|---:|")
     for _, row in weekly_tail.iterrows():
-        lines.append(f"| {row['week']} | {int(row['accidents'])} | {int(row['severe'])} | {int(row['fatalities'])} |")
+        lines.append(
+            f"| {row['week']} | {int(row['accidents'])} | {int(row['severe'])} | {int(row['fatalities'])} |"
+        )
     lines.append("")
     lines.append("## Regions Requiring Attention")
     lines.append("| Region | Accidents | Severe | Severe Rate | Fatalities |")
@@ -124,14 +132,24 @@ def build_executive_report(accidents: pd.DataFrame, model_df: pd.DataFrame) -> s
             direction = "higher risk" if corr >= 0 else "lower risk"
             lines.append(f"- {feature}: corr={corr:.3f} ({direction})")
     else:
-        lines.append("- Not enough modeled features were available to compute stable diagnostic signals.")
+        lines.append(
+            "- Not enough modeled features were available to compute stable diagnostic signals."
+        )
     lines.append("")
     lines.append("## Decision Notes")
-    lines.append(f"- Prioritize detailed review for **{leading_region}** and hotspot **{leading_hotspot}**.")
-    lines.append("- Use road-day exposure, violations, and adverse-weather context together; raw accident counts alone are insufficient.")
-    lines.append("- For executive use, keep this output paired with the quality report and model report before publishing dashboards.")
+    lines.append(
+        f"- Prioritize detailed review for **{leading_region}** and hotspot **{leading_hotspot}**."
+    )
+    lines.append(
+        "- Use road-day exposure, violations, and adverse-weather context together; raw accident counts alone are insufficient."
+    )
+    lines.append(
+        "- For executive use, keep this output paired with the quality report and model report before publishing dashboards."
+    )
     lines.append("")
     lines.append("## Assumptions and Limitations")
     lines.append("- This demo uses synthetic data to demonstrate governed analytics methodology.")
-    lines.append("- Production deployment would add entity-level SLAs, refresh monitoring, and approval workflows.")
+    lines.append(
+        "- Production deployment would add entity-level SLAs, refresh monitoring, and approval workflows."
+    )
     return "\n".join(lines)

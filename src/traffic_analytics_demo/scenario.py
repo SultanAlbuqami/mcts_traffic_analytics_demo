@@ -27,7 +27,13 @@ def _apply_speed_management(df: pd.DataFrame) -> pd.DataFrame:
 def _apply_enforcement(df: pd.DataFrame) -> pd.DataFrame:
     adjusted = df.copy()
     factor = 0.78
-    for col in ["total_violations", "violations_per_1000_volume", "Speeding", "UnsafeLaneChange", "RedLight"]:
+    for col in [
+        "total_violations",
+        "violations_per_1000_volume",
+        "Speeding",
+        "UnsafeLaneChange",
+        "RedLight",
+    ]:
         if col in adjusted.columns:
             adjusted[col] = adjusted[col] * factor
     return adjusted
@@ -151,7 +157,9 @@ def analyze_scenarios(
                     "avg_scenario_risk": float(pd.Series(scenario_risk).mean()),
                     "baseline_high_risk_road_days": int(baseline_high_risk.sum()),
                     "high_risk_road_days_reduced": int(moved_below_threshold.sum()),
-                    "high_risk_reduction_rate": float(moved_below_threshold.sum() / max(1, baseline_high_risk.sum())),
+                    "high_risk_reduction_rate": float(
+                        moved_below_threshold.sum() / max(1, baseline_high_risk.sum())
+                    ),
                 }
             )
 
@@ -164,7 +172,9 @@ def analyze_scenarios(
 
         if scenario_name != "Baseline":
             opportunities.append(
-                scenario_output.sort_values(["risk_delta", "baseline_risk"], ascending=False).head(20)
+                scenario_output.sort_values(["risk_delta", "baseline_risk"], ascending=False).head(
+                    20
+                )
             )
             region_impact = (
                 scenario_output.groupby("region", as_index=False)
@@ -184,7 +194,9 @@ def analyze_scenarios(
         ["avg_risk_reduction", "high_risk_road_days_reduced"],
         ascending=False,
     )
-    top_opportunities = pd.concat(opportunities, ignore_index=True) if opportunities else pd.DataFrame()
+    top_opportunities = (
+        pd.concat(opportunities, ignore_index=True) if opportunities else pd.DataFrame()
+    )
     region_impact = pd.concat(region_rows, ignore_index=True) if region_rows else pd.DataFrame()
 
     return ScenarioAnalysis(
@@ -198,10 +210,14 @@ def scenario_to_markdown(analysis: ScenarioAnalysis) -> str:
     lines: list[str] = []
     lines.append("# Scenario Analysis Report")
     lines.append("")
-    lines.append("This report estimates the relative impact of intervention packages on a blended road-day risk score.")
+    lines.append(
+        "This report estimates the relative impact of intervention packages on a blended road-day risk score."
+    )
     lines.append("")
     lines.append("## Scenario Summary")
-    lines.append("| Scenario | Avg Risk Reduction | Median Risk Reduction | Max Risk Reduction | Baseline Avg Risk | Scenario Avg Risk | High-Risk Road-Days Reduced | Reduction Rate |")
+    lines.append(
+        "| Scenario | Avg Risk Reduction | Median Risk Reduction | Max Risk Reduction | Baseline Avg Risk | Scenario Avg Risk | High-Risk Road-Days Reduced | Reduction Rate |"
+    )
     lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
     for _, row in analysis.summary.iterrows():
         lines.append(
@@ -214,7 +230,9 @@ def scenario_to_markdown(analysis: ScenarioAnalysis) -> str:
     if analysis.top_opportunities.empty:
         lines.append("- No scenario opportunities were generated.")
     else:
-        lines.append("| Scenario | Road | Date | Region | City | Type | Baseline Risk | Scenario Risk | Risk Delta |")
+        lines.append(
+            "| Scenario | Road | Date | Region | City | Type | Baseline Risk | Scenario Risk | Risk Delta |"
+        )
         lines.append("|---|---|---|---|---|---|---:|---:|---:|")
         for _, row in analysis.top_opportunities.head(12).iterrows():
             day = pd.to_datetime(row["date"]).date().isoformat() if pd.notna(row["date"]) else ""
@@ -227,7 +245,9 @@ def scenario_to_markdown(analysis: ScenarioAnalysis) -> str:
     if analysis.region_impact.empty:
         lines.append("- No regional impact table was generated.")
     else:
-        lines.append("| Scenario | Region | Avg Risk Reduction | High-Risk Road-Days Reduced | Baseline Mean Risk | Scenario Mean Risk |")
+        lines.append(
+            "| Scenario | Region | Avg Risk Reduction | High-Risk Road-Days Reduced | Baseline Mean Risk | Scenario Mean Risk |"
+        )
         lines.append("|---|---|---:|---:|---:|---:|")
         for _, row in analysis.region_impact.head(15).iterrows():
             lines.append(
@@ -237,7 +257,13 @@ def scenario_to_markdown(analysis: ScenarioAnalysis) -> str:
     lines.append("")
     lines.append("## Interpretation Notes")
     lines.append("- These scenarios are directional planning tools, not causal proof.")
-    lines.append("- The scenario score blends baseline model risk with controllable operational pressure signals.")
-    lines.append("- Combined interventions are expected to be strongest when they address speed, behavior, and context together.")
-    lines.append("- The output is most useful for prioritization workshops and operational planning discussions.")
+    lines.append(
+        "- The scenario score blends baseline model risk with controllable operational pressure signals."
+    )
+    lines.append(
+        "- Combined interventions are expected to be strongest when they address speed, behavior, and context together."
+    )
+    lines.append(
+        "- The output is most useful for prioritization workshops and operational planning discussions."
+    )
     return "\n".join(lines)

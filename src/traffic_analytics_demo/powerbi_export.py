@@ -120,7 +120,9 @@ def export_star_schema(processed: dict[str, pd.DataFrame], out_dir: Path) -> Non
             *TRACEABILITY_COLS,
         ]
     ].copy()
-    fact_violation["date"] = pd.to_datetime(fact_violation["date_time"], utc=True).dt.date.astype(str)
+    fact_violation["date"] = pd.to_datetime(fact_violation["date_time"], utc=True).dt.date.astype(
+        str
+    )
     fact_violation.to_csv(out_dir / "fact_violation.csv", index=False)
 
     fact_sensor = sensors[

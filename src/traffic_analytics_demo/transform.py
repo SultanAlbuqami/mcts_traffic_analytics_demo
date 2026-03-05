@@ -45,10 +45,14 @@ def clean_and_integrate(sources: dict[str, pd.DataFrame]) -> dict[str, pd.DataFr
     accidents = accidents.dropna(subset=["incident_id", "road_id", "date_time"]).copy()
     accidents["injuries"] = accidents["injuries"].fillna(0).clip(0, 20).astype(int)
     accidents["fatalities"] = accidents["fatalities"].fillna(0).clip(0, 10).astype(int)
-    accidents["vehicles_involved"] = accidents["vehicles_involved"].fillna(1).clip(1, 30).astype(int)
+    accidents["vehicles_involved"] = (
+        accidents["vehicles_involved"].fillna(1).clip(1, 30).astype(int)
+    )
     accidents["date"] = accidents["date_time"].dt.date
 
-    violations = violations.dropna(subset=["violation_id", "road_id", "date_time", "violation_type"]).copy()
+    violations = violations.dropna(
+        subset=["violation_id", "road_id", "date_time", "violation_type"]
+    ).copy()
     violations["fine_amount"] = violations["fine_amount"].fillna(0).clip(0, 10000).astype(int)
     violations["date"] = violations["date_time"].dt.date
 
@@ -64,7 +68,9 @@ def clean_and_integrate(sources: dict[str, pd.DataFrame]) -> dict[str, pd.DataFr
     accidents["hour"] = accidents["date_time"].dt.floor("h")
     if {"region", "city"}.issubset(accidents.columns):
         weather_lookup = weather[["hour", "region", "city", *WEATHER_ATTRS]].copy()
-        accidents = _merge_missing_columns(accidents, weather_lookup, ["hour", "region", "city"], WEATHER_ATTRS)
+        accidents = _merge_missing_columns(
+            accidents, weather_lookup, ["hour", "region", "city"], WEATHER_ATTRS
+        )
     accidents.drop(columns=["hour"], inplace=True, errors="ignore")
 
     exposure = sensors.groupby(["road_id", "date"], as_index=False).agg(
@@ -121,12 +127,18 @@ def clean_and_integrate(sources: dict[str, pd.DataFrame]) -> dict[str, pd.DataFr
         if col in model_df.columns:
             model_df[col] = model_df[col].fillna("Unknown")
 
-    numeric_cols = [c for c in model_df.columns if c not in ["road_id", "date", "region", "city", "road_type", "weather_mode"]]
+    numeric_cols = [
+        c
+        for c in model_df.columns
+        if c not in ["road_id", "date", "region", "city", "road_type", "weather_mode"]
+    ]
     for col in numeric_cols:
         model_df[col] = model_df[col].fillna(0)
 
     model_df["has_fatality"] = (model_df["fatalities"] > 0).astype(int)
-    model_df["severe_rate"] = (model_df["severe"] / model_df["accidents"].replace(0, np.nan)).fillna(0.0)
+    model_df["severe_rate"] = (
+        model_df["severe"] / model_df["accidents"].replace(0, np.nan)
+    ).fillna(0.0)
     model_df["violations_per_1000_volume"] = (
         (model_df.get("total_violations", 0) * 1000) / model_df["daily_volume"].replace(0, np.nan)
     ).fillna(0.0)

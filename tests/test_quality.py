@@ -55,7 +55,9 @@ def test_quality_rules_smoke() -> None:
         }
     )
 
-    results, summary = run_quality_checks({"roads": roads, "accidents": accidents, "model_df": model_df})
+    results, summary = run_quality_checks(
+        {"roads": roads, "accidents": accidents, "model_df": model_df}
+    )
 
     assert summary["total"] >= 20
     assert summary["fail"] == 0

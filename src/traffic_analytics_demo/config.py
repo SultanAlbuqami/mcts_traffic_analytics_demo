@@ -80,7 +80,9 @@ def get_paths() -> Paths:
 def get_settings() -> RuntimeSettings:
     log_level = _env_str("TRAFFIC_ANALYTICS_LOG_LEVEL", "INFO").upper()
     if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
-        raise ValueError("TRAFFIC_ANALYTICS_LOG_LEVEL must be one of DEBUG/INFO/WARNING/ERROR/CRITICAL.")
+        raise ValueError(
+            "TRAFFIC_ANALYTICS_LOG_LEVEL must be one of DEBUG/INFO/WARNING/ERROR/CRITICAL."
+        )
 
     default_days = _env_int("TRAFFIC_ANALYTICS_DEFAULT_DAYS", 120)
     if default_days <= 0:
@@ -96,7 +98,9 @@ def get_settings() -> RuntimeSettings:
 
     llm_provider = _env_str("TRAFFIC_ANALYTICS_LLM_PROVIDER", "mock").lower()
     if llm_provider not in {"mock", "local_gateway", "disabled"}:
-        raise ValueError("TRAFFIC_ANALYTICS_LLM_PROVIDER must be one of: mock, local_gateway, disabled.")
+        raise ValueError(
+            "TRAFFIC_ANALYTICS_LLM_PROVIDER must be one of: mock, local_gateway, disabled."
+        )
 
     llm_timeout_seconds = _env_int("TRAFFIC_ANALYTICS_LLM_TIMEOUT_SECONDS", 20)
     if llm_timeout_seconds <= 0:

@@ -1,0 +1,6 @@
+# Development dependencies — install in addition to requirements.txt
+# pip install -r requirements-dev.txt
+pytest>=8.0
+ruff>=0.4.0
+mypy>=1.9
+pip-audit>=2.7

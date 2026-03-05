@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -30,7 +29,9 @@ class ModelReport:
     holdout_predictions: pd.DataFrame
 
 
-def get_model_feature_columns(model_df: pd.DataFrame, target_col: str = "has_fatality") -> list[str]:
+def get_model_feature_columns(
+    model_df: pd.DataFrame, target_col: str = "has_fatality"
+) -> list[str]:
     return [
         c
         for c in model_df.columns
@@ -137,7 +138,7 @@ def train_and_evaluate(
     model_df: pd.DataFrame,
     target_col: str = "has_fatality",
     random_state: int = 42,
-) -> Tuple[Pipeline, ModelReport]:
+) -> tuple[Pipeline, ModelReport]:
     df = model_df.copy()
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
@@ -200,7 +201,9 @@ def train_and_evaluate(
                         "pred_positive_rate": float(sub["y_pred"].mean()),
                         "auc": _safe_auc(sub["y_true"], sub["y_proba"]),
                         "f1": float(f1_score(sub["y_true"], sub["y_pred"], zero_division=0)),
-                        "recall": float(recall_score(sub["y_true"], sub["y_pred"], zero_division=0)),
+                        "recall": float(
+                            recall_score(sub["y_true"], sub["y_pred"], zero_division=0)
+                        ),
                     }
                 )
     group_metrics = pd.DataFrame(gm_rows)
@@ -215,9 +218,13 @@ def train_and_evaluate(
     coefs = pipe.named_steps["clf"].coef_.ravel()
     top_features = pd.DataFrame({"feature": feature_names, "coef": coefs})
     top_features["abs_coef"] = top_features["coef"].abs()
-    top_features = top_features.sort_values("abs_coef", ascending=False).head(15)[["feature", "coef"]]
+    top_features = top_features.sort_values("abs_coef", ascending=False).head(15)[
+        ["feature", "coef"]
+    ]
 
-    holdout_predictions = test_df[["road_id", "date", "region", "city", "road_type", target_col]].copy()
+    holdout_predictions = test_df[
+        ["road_id", "date", "region", "city", "road_type", target_col]
+    ].copy()
     holdout_predictions["predicted_risk"] = proba
     holdout_predictions["predicted_label"] = pred
     holdout_predictions["risk_band"] = pd.cut(
@@ -260,7 +267,9 @@ def report_to_markdown(rep: ModelReport) -> str:
     lines.append(f"- Decision threshold: {rep.decision_threshold:.2f}")
     lines.append("")
     lines.append("## Core Metrics")
-    lines.append(f"- AUC: {rep.auc:.3f}" if rep.auc is not None else "- AUC: n/a (single-class holdout)")
+    lines.append(
+        f"- AUC: {rep.auc:.3f}" if rep.auc is not None else "- AUC: n/a (single-class holdout)"
+    )
     lines.append(f"- F1: {rep.f1:.3f}")
     lines.append(f"- Precision: {rep.precision:.3f}")
     lines.append(f"- Recall: {rep.recall:.3f}")
@@ -274,7 +283,9 @@ def report_to_markdown(rep: ModelReport) -> str:
     lines.append("")
     lines.append("## Highest-Risk Holdout Road-Days")
     lines.append("")
-    lines.append("| Road | Date | Region | City | Type | Actual Fatality | Predicted Risk | Risk Band |")
+    lines.append(
+        "| Road | Date | Region | City | Type | Actual Fatality | Predicted Risk | Risk Band |"
+    )
     lines.append("|---|---|---|---|---|---:|---:|---|")
     for _, row in rep.holdout_predictions.head(10).iterrows():
         day = pd.to_datetime(row["date"]).date().isoformat() if pd.notna(row["date"]) else ""
@@ -288,7 +299,9 @@ def report_to_markdown(rep: ModelReport) -> str:
     if rep.group_metrics.empty:
         lines.append("No group columns found to compute group metrics.")
     else:
-        lines.append("| Group Column | Group | n | Positive Rate | Pred + Rate | AUC | F1 | Recall |")
+        lines.append(
+            "| Group Column | Group | n | Positive Rate | Pred + Rate | AUC | F1 | Recall |"
+        )
         lines.append("|---|---|---:|---:|---:|---:|---:|---:|")
         for _, row in rep.group_metrics.iterrows():
             auc = "" if pd.isna(row["auc"]) else f"{row['auc']:.3f}"
@@ -298,7 +311,13 @@ def report_to_markdown(rep: ModelReport) -> str:
             )
     lines.append("")
     lines.append("## Limitations")
-    lines.append("- Synthetic data: the goal is to demonstrate methodology, not claim production-level accuracy.")
-    lines.append("- This model supports prioritization and investigation, not automated enforcement decisions.")
-    lines.append("- Production maturity would add calibration, drift monitoring, challenger models, and human review.")
+    lines.append(
+        "- Synthetic data: the goal is to demonstrate methodology, not claim production-level accuracy."
+    )
+    lines.append(
+        "- This model supports prioritization and investigation, not automated enforcement decisions."
+    )
+    lines.append(
+        "- Production maturity would add calibration, drift monitoring, challenger models, and human review."
+    )
     return "\n".join(lines)

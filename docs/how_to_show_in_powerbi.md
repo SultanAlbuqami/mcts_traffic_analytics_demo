@@ -2,6 +2,8 @@
 
 Goal: prove that you understand **data modeling, KPI design, drill-down, and executive reporting**, not only Python.
 
+> **New:** See the full [Power BI Starter Pack](../powerbi/README.md) for step-by-step build instructions, Tabular Editor scripts, and DAX measure templates.
+
 ## 1) Import the exported model
 
 Open Power BI Desktop, then import files from `out/powerbi/`:

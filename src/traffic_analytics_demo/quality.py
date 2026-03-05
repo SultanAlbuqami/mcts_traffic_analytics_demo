@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pandas as pd
 
@@ -32,7 +32,17 @@ CONTRACTS: dict[str, DatasetContract] = {
         nonnegative_columns=("speed_limit", "lanes"),
     ),
     "accidents": DatasetContract(
-        required_columns=("incident_id", "date_time", "road_id", "region", "city", "road_type", "severity", "fatalities", "injuries"),
+        required_columns=(
+            "incident_id",
+            "date_time",
+            "road_id",
+            "region",
+            "city",
+            "road_type",
+            "severity",
+            "fatalities",
+            "injuries",
+        ),
         key_columns=("incident_id",),
         allowed_values={"severity": {"Minor", "Moderate", "Severe", "Fatal"}},
         nonnegative_columns=("fatalities", "injuries", "vehicles_involved"),
@@ -117,11 +127,13 @@ def _add_result(
     )
 
 
-def _run_contract_checks(results: list[QualityRuleResult], dfs: Dict[str, pd.DataFrame]) -> None:
+def _run_contract_checks(results: list[QualityRuleResult], dfs: dict[str, pd.DataFrame]) -> None:
     for dataset_name, contract in CONTRACTS.items():
         df = dfs[dataset_name]
 
-        missing_columns = [column for column in contract.required_columns if column not in df.columns]
+        missing_columns = [
+            column for column in contract.required_columns if column not in df.columns
+        ]
         _add_result(
             results,
             name=f"{dataset_name}.contract_required_columns",
@@ -173,8 +185,10 @@ def _run_contract_checks(results: list[QualityRuleResult], dfs: Dict[str, pd.Dat
             )
 
 
-def run_quality_checks(dfs: Dict[str, pd.DataFrame]) -> Tuple[List[QualityRuleResult], Dict[str, Any]]:
-    results: List[QualityRuleResult] = []
+def run_quality_checks(
+    dfs: dict[str, pd.DataFrame],
+) -> tuple[list[QualityRuleResult], dict[str, Any]]:
+    results: list[QualityRuleResult] = []
 
     accidents = dfs["accidents"]
     roads = dfs["roads"]
@@ -208,7 +222,9 @@ def run_quality_checks(dfs: Dict[str, pd.DataFrame]) -> Tuple[List[QualityRuleRe
         name="accidents.traceability_columns",
         metric=None,
         threshold=None,
-        notes="OK" if not missing_traceability else f"Missing traceability columns: {missing_traceability}",
+        notes="OK"
+        if not missing_traceability
+        else f"Missing traceability columns: {missing_traceability}",
         failed=bool(missing_traceability),
     )
 
@@ -292,7 +308,11 @@ def run_quality_checks(dfs: Dict[str, pd.DataFrame]) -> Tuple[List[QualityRuleRe
         warn_limit=0.0,
     )
     latest_accident = accident_ts.max()
-    recency_days = (pd.Timestamp(datetime.now(UTC)) - latest_accident).total_seconds() / 86400 if pd.notna(latest_accident) else None
+    recency_days = (
+        (pd.Timestamp(datetime.now(UTC)) - latest_accident).total_seconds() / 86400
+        if pd.notna(latest_accident)
+        else None
+    )
     _add_result(
         results,
         name="accidents.recency_days",
@@ -396,15 +416,13 @@ def run_quality_checks(dfs: Dict[str, pd.DataFrame]) -> Tuple[List[QualityRuleRe
     return results, summary
 
 
-def to_markdown(results: List[QualityRuleResult], summary: Dict[str, Any]) -> str:
+def to_markdown(results: list[QualityRuleResult], summary: dict[str, Any]) -> str:
     lines = []
     lines.append("# Data Quality Report")
     lines.append("")
     lines.append("This report combines explicit data contracts with operational quality checks.")
     lines.append("")
-    lines.append(
-        f"- Overall gate: **{summary['gate_status']}**"
-    )
+    lines.append(f"- Overall gate: **{summary['gate_status']}**")
     lines.append(
         f"- PASS: {summary['pass']}  |  WARN: {summary['warn']}  |  FAIL: {summary['fail']}  |  TOTAL: {summary['total']}"
     )
@@ -418,6 +436,8 @@ def to_markdown(results: List[QualityRuleResult], summary: Dict[str, Any]) -> st
     lines.append("")
     lines.append("## Interpretation")
     lines.append("- **PASS**: within the expected quality threshold.")
-    lines.append("- **WARN**: acceptable for demo analytics, but requires remediation before production publication.")
+    lines.append(
+        "- **WARN**: acceptable for demo analytics, but requires remediation before production publication."
+    )
     lines.append("- **FAIL**: blocks trusted reporting or model usage until fixed.")
     return "\n".join(lines)

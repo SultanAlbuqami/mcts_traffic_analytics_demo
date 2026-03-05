@@ -61,7 +61,9 @@ def build_data_dictionary(datasets: dict[str, pd.DataFrame]) -> str:
         lines.append("| Column | Dtype | Null Rate | Description |")
         lines.append("|---|---|---:|---|")
         for column in df.columns:
-            description = COLUMN_DESCRIPTIONS.get(column, "Business/technical field documented for demo use")
+            description = COLUMN_DESCRIPTIONS.get(
+                column, "Business/technical field documented for demo use"
+            )
             null_rate = float(df[column].isna().mean())
             lines.append(f"| {column} | {df[column].dtype} | {null_rate:.4f} | {description} |")
         lines.append("")
@@ -72,9 +74,19 @@ def build_data_dictionary(datasets: dict[str, pd.DataFrame]) -> str:
 def build_lineage_summary(datasets: dict[str, pd.DataFrame]) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for dataset_name, df in datasets.items():
-        source_systems = sorted(df["source_system"].dropna().astype(str).unique().tolist()) if "source_system" in df.columns else []
-        batch_ids = sorted(df["ingest_batch_id"].dropna().astype(str).unique().tolist()) if "ingest_batch_id" in df.columns else []
-        record_hash_coverage = float(df["record_hash"].notna().mean()) if "record_hash" in df.columns else 0.0
+        source_systems = (
+            sorted(df["source_system"].dropna().astype(str).unique().tolist())
+            if "source_system" in df.columns
+            else []
+        )
+        batch_ids = (
+            sorted(df["ingest_batch_id"].dropna().astype(str).unique().tolist())
+            if "ingest_batch_id" in df.columns
+            else []
+        )
+        record_hash_coverage = (
+            float(df["record_hash"].notna().mean()) if "record_hash" in df.columns else 0.0
+        )
         rows.append(
             {
                 "dataset": dataset_name,
@@ -132,7 +144,9 @@ def build_solution_overview(
     lines.append("")
     lines.append("## Current solution status")
     lines.append(f"- Quality gate: **{quality_summary['gate_status']}**")
-    lines.append(f"- Quality checks: {quality_summary['pass']} PASS / {quality_summary['warn']} WARN / {quality_summary['fail']} FAIL")
+    lines.append(
+        f"- Quality checks: {quality_summary['pass']} PASS / {quality_summary['warn']} WARN / {quality_summary['fail']} FAIL"
+    )
     lines.append(f"- Model validation split: {model_summary['split_strategy']}")
     auc_text = f"{model_summary['auc']:.3f}" if model_summary["auc"] is not None else "n/a"
     lines.append(f"- Holdout AUC: {auc_text}")
@@ -158,13 +172,21 @@ def build_solution_overview(
     lines.append("")
     lines.append("## Scope notes")
     lines.append("- The workflow is governed and repeatable, not notebook-driven.")
-    lines.append("- The predictive model is framed as prioritization support, not automated decision-making.")
-    lines.append("- Power BI delivery is considered from the data-model stage, not afterthought reporting.")
+    lines.append(
+        "- The predictive model is framed as prioritization support, not automated decision-making."
+    )
+    lines.append(
+        "- Power BI delivery is considered from the data-model stage, not afterthought reporting."
+    )
     lines.append("")
     lines.append("## Limitations")
     lines.append("- Synthetic data is used for safe demo purposes.")
-    lines.append("- Orchestration, authentication, and production monitoring are intentionally out of scope for the demo.")
-    lines.append("- Model accuracy is secondary to methodological rigor and explainability in this project.")
+    lines.append(
+        "- Orchestration, authentication, and production monitoring are intentionally out of scope for the demo."
+    )
+    lines.append(
+        "- Model accuracy is secondary to methodological rigor and explainability in this project."
+    )
     return "\n".join(lines)
 
 
@@ -196,7 +218,11 @@ def write_project_artifacts(
         quality_summary,
         model_summary,
         output_dir,
-        additional_output_files=["pipeline_manifest.json", "solution_overview.md", "run_summary.json"],
+        additional_output_files=[
+            "pipeline_manifest.json",
+            "solution_overview.md",
+            "run_summary.json",
+        ],
     )
     solution_overview = build_solution_overview(
         quality_summary,
@@ -206,4 +232,6 @@ def write_project_artifacts(
         run_summary=run_summary,
     )
     (output_dir / "solution_overview.md").write_text(solution_overview, encoding="utf-8")
-    (output_dir / "pipeline_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (output_dir / "pipeline_manifest.json").write_text(
+        json.dumps(manifest, indent=2), encoding="utf-8"
+    )

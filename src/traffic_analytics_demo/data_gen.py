@@ -32,7 +32,14 @@ WEATHER_PROBABILITIES = {
 }
 ROAD_TYPE_BASE_VOLUME = {"Highway": 150, "Urban": 88, "Rural": 42}
 ROAD_TYPE_SPEED_MARGIN = {"Highway": 11.0, "Urban": 3.0, "Rural": 6.0}
-REGION_VOLUME_FACTOR = {"Riyadh": 1.18, "Makkah": 1.12, "Eastern": 1.06, "Madinah": 0.95, "Qassim": 0.82, "Asir": 0.78}
+REGION_VOLUME_FACTOR = {
+    "Riyadh": 1.18,
+    "Makkah": 1.12,
+    "Eastern": 1.06,
+    "Madinah": 0.95,
+    "Qassim": 0.82,
+    "Asir": 0.78,
+}
 SENSOR_HOUR_WEIGHTS = np.array(
     [
         0.012,
@@ -101,7 +108,11 @@ class GenConfig:
     accidents: int = 4000
     violations: int = 15000
     sensors_rows: int = 60000
-def _scaled_integer_counts(raw_values: np.ndarray, target_total: int, min_value: int = 1) -> np.ndarray:
+
+
+def _scaled_integer_counts(
+    raw_values: np.ndarray, target_total: int, min_value: int = 1
+) -> np.ndarray:
     values = np.asarray(raw_values, dtype=float)
     if values.size == 0:
         return np.array([], dtype=int)
@@ -164,13 +175,19 @@ def _sample_accident_timestamp(
         hour = int(rng.choice(DAY_HOURS))
     minute = int(rng.integers(0, 60))
     second = int(rng.integers(0, 60))
-    return pd.Timestamp(date_value).tz_localize("UTC") + pd.Timedelta(hours=hour, minutes=minute, seconds=second)
+    return pd.Timestamp(date_value).tz_localize("UTC") + pd.Timedelta(
+        hours=hour, minutes=minute, seconds=second
+    )
 
 
 def _weather_visibility(weather: np.ndarray, rng: np.random.Generator) -> np.ndarray:
     base_visibility = np.select(
         [weather == "Dust", weather == "Rain", weather == "Fog"],
-        [rng.normal(4.2, 1.0, size=weather.size), rng.normal(6.8, 1.1, size=weather.size), rng.normal(2.4, 0.7, size=weather.size)],
+        [
+            rng.normal(4.2, 1.0, size=weather.size),
+            rng.normal(6.8, 1.1, size=weather.size),
+            rng.normal(2.4, 0.7, size=weather.size),
+        ],
         default=rng.normal(10.0, 1.0, size=weather.size),
     )
     return np.clip(base_visibility, 0.5, 12).round(1)
@@ -197,7 +214,10 @@ def _aggregate_weather_daily(df_weather: pd.DataFrame) -> pd.DataFrame:
         df_weather.assign(date=df_weather["date_time"].dt.date)
         .groupby(["region", "city", "date"], as_index=False)
         .agg(
-            weather_mode=("weather", lambda s: s.mode(dropna=True).iloc[0] if not s.mode(dropna=True).empty else "Clear"),
+            weather_mode=(
+                "weather",
+                lambda s: s.mode(dropna=True).iloc[0] if not s.mode(dropna=True).empty else "Clear",
+            ),
             low_visibility_hours=("visibility_km", lambda s: int((s < 4).sum())),
             rain_hours=("weather", lambda s: int((s == "Rain").sum())),
             fog_hours=("weather", lambda s: int((s == "Fog").sum())),
@@ -215,14 +235,17 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
 
     now = datetime.now(UTC)
     start = now - timedelta(days=cfg.days)
-    end = now
 
     roads = []
     for i in range(cfg.road_segments):
         region = random.choice(REGIONS)
         city = random.choice(CITIES[region])
         road_type = random.choice(ROAD_TYPES)
-        speed_limit = random.choice([60, 80, 100, 120, 140]) if road_type == "Highway" else random.choice([40, 60, 80])
+        speed_limit = (
+            random.choice([60, 80, 100, 120, 140])
+            if road_type == "Highway"
+            else random.choice([40, 60, 80])
+        )
         lanes = random.choice([2, 3, 4, 5]) if road_type != "Rural" else random.choice([1, 2])
         roads.append(
             {
@@ -237,7 +260,9 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
     df_roads = pd.DataFrame(roads)
     road_profiles = df_roads[["road_id"]].copy()
     road_profiles["behavior_factor"] = rng.normal(0, 1, size=len(df_roads))
-    road_profiles["exposure_factor"] = np.clip(rng.normal(1.0, 0.14, size=len(df_roads)), 0.70, 1.35)
+    road_profiles["exposure_factor"] = np.clip(
+        rng.normal(1.0, 0.14, size=len(df_roads)), 0.70, 1.35
+    )
 
     weather_rows = []
     hours = int(cfg.days * 24)
@@ -274,7 +299,11 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
             ).date
         }
     )
-    road_days = df_roads.assign(_join_key=1).merge(road_dates.assign(_join_key=1), on="_join_key").drop(columns="_join_key")
+    road_days = (
+        df_roads.assign(_join_key=1)
+        .merge(road_dates.assign(_join_key=1), on="_join_key")
+        .drop(columns="_join_key")
+    )
     road_days = road_days.merge(road_profiles, on="road_id", how="left").merge(
         weather_daily,
         on=["region", "city", "date"],
@@ -287,25 +316,62 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
 
     day_index = pd.to_datetime(road_days["date"])
     weekend_factor = np.where(day_index.dt.dayofweek.isin([4, 5]), 0.90, 1.00)
-    weather_volume_factor = road_days["weather_mode"].map({"Clear": 1.00, "Dust": 0.94, "Rain": 0.88, "Fog": 0.84}).fillna(1.0)
-    weather_speed_penalty = road_days["weather_mode"].map({"Clear": 0.0, "Dust": 4.0, "Rain": 8.0, "Fog": 12.0}).fillna(0.0)
-    road_type_risk = road_days["road_type"].map({"Highway": 0.30, "Urban": 0.18, "Rural": 0.24}).fillna(0.18)
+    weather_volume_factor = (
+        road_days["weather_mode"]
+        .map({"Clear": 1.00, "Dust": 0.94, "Rain": 0.88, "Fog": 0.84})
+        .fillna(1.0)
+    )
+    weather_speed_penalty = (
+        road_days["weather_mode"]
+        .map({"Clear": 0.0, "Dust": 4.0, "Rain": 8.0, "Fog": 12.0})
+        .fillna(0.0)
+    )
+    road_type_risk = (
+        road_days["road_type"].map({"Highway": 0.30, "Urban": 0.18, "Rural": 0.24}).fillna(0.18)
+    )
 
-    base_volume = road_days["road_type"].map(ROAD_TYPE_BASE_VOLUME) * road_days["region"].map(REGION_VOLUME_FACTOR)
+    base_volume = road_days["road_type"].map(ROAD_TYPE_BASE_VOLUME) * road_days["region"].map(
+        REGION_VOLUME_FACTOR
+    )
     lanes_factor = 1 + ((road_days["lanes"].astype(float) - 2) * 0.07)
     volume_noise = np.clip(rng.normal(1.0, 0.12, size=len(road_days)), 0.75, 1.30)
-    daily_volume_target = base_volume * lanes_factor * road_days["exposure_factor"] * weekend_factor * weather_volume_factor * volume_noise
+    daily_volume_target = (
+        base_volume
+        * lanes_factor
+        * road_days["exposure_factor"]
+        * weekend_factor
+        * weather_volume_factor
+        * volume_noise
+    )
     road_days["daily_volume_target"] = np.clip(daily_volume_target.round(), 18, 240)
 
-    congestion_penalty = np.clip((road_days["daily_volume_target"] - road_days["daily_volume_target"].median()) / 28, 0, 10)
-    speed_margin = road_days["road_type"].map(ROAD_TYPE_SPEED_MARGIN) + (road_days["behavior_factor"] * 4.0)
-    mean_speed_target = road_days["speed_limit"].astype(float) + speed_margin - weather_speed_penalty - congestion_penalty + rng.normal(0, 5.5, size=len(road_days))
+    congestion_penalty = np.clip(
+        (road_days["daily_volume_target"] - road_days["daily_volume_target"].median()) / 28, 0, 10
+    )
+    speed_margin = road_days["road_type"].map(ROAD_TYPE_SPEED_MARGIN) + (
+        road_days["behavior_factor"] * 4.0
+    )
+    mean_speed_target = (
+        road_days["speed_limit"].astype(float)
+        + speed_margin
+        - weather_speed_penalty
+        - congestion_penalty
+        + rng.normal(0, 5.5, size=len(road_days))
+    )
     road_days["mean_speed_target"] = np.clip(mean_speed_target, 18, 170)
-    speed_tail = np.clip(10 + (road_days["behavior_factor"] * 2.0) + rng.normal(0, 3.0, size=len(road_days)), 5, 22)
-    road_days["p95_speed_target"] = np.clip(road_days["mean_speed_target"] + speed_tail, road_days["mean_speed_target"] + 2, 185)
+    speed_tail = np.clip(
+        10 + (road_days["behavior_factor"] * 2.0) + rng.normal(0, 3.0, size=len(road_days)), 5, 22
+    )
+    road_days["p95_speed_target"] = np.clip(
+        road_days["mean_speed_target"] + speed_tail, road_days["mean_speed_target"] + 2, 185
+    )
 
-    raw_sensor_counts = road_days["daily_volume_target"] * road_days["road_type"].map({"Highway": 0.62, "Urban": 0.48, "Rural": 0.36})
-    road_days["sensor_events_target"] = _scaled_integer_counts(raw_sensor_counts.to_numpy(), cfg.sensors_rows, min_value=1)
+    raw_sensor_counts = road_days["daily_volume_target"] * road_days["road_type"].map(
+        {"Highway": 0.62, "Urban": 0.48, "Rural": 0.36}
+    )
+    road_days["sensor_events_target"] = _scaled_integer_counts(
+        raw_sensor_counts.to_numpy(), cfg.sensors_rows, min_value=1
+    )
 
     sensor_rows: list[dict[str, object]] = []
     for row in road_days.itertuples(index=False):
@@ -334,7 +400,9 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
             )
     df_sensors = pd.DataFrame(sensor_rows)
 
-    overspeed_excess = np.clip(road_days["p95_speed_target"] - road_days["speed_limit"].astype(float), 0, None)
+    overspeed_excess = np.clip(
+        road_days["p95_speed_target"] - road_days["speed_limit"].astype(float), 0, None
+    )
     violation_pressure = (
         0.10
         + (overspeed_excess / 20.0)
@@ -344,21 +412,37 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
     )
     violation_weights = np.clip(violation_pressure.to_numpy(dtype=float), 0.01, None)
     violation_weights = violation_weights / violation_weights.sum()
-    selected_violation_rows = rng.choice(road_days.index.to_numpy(), size=cfg.violations, replace=True, p=violation_weights)
+    selected_violation_rows = rng.choice(
+        road_days.index.to_numpy(), size=cfg.violations, replace=True, p=violation_weights
+    )
 
     violation_count_by_idx = pd.Series(selected_violation_rows).value_counts().to_dict()
-    road_days["simulated_violation_count"] = road_days.index.map(lambda idx: int(violation_count_by_idx.get(idx, 0)))
+    road_days["simulated_violation_count"] = road_days.index.map(
+        lambda idx: int(violation_count_by_idx.get(idx, 0))
+    )
     road_days["simulated_violations_per_1000_volume"] = (
-        road_days["simulated_violation_count"] * 1000 / road_days["daily_volume_target"].replace(0, np.nan)
+        road_days["simulated_violation_count"]
+        * 1000
+        / road_days["daily_volume_target"].replace(0, np.nan)
     ).fillna(0.0)
 
     violation_rows: list[dict[str, object]] = []
-    fine_base = {"Speeding": 600, "RedLight": 900, "Seatbelt": 220, "PhoneUse": 320, "UnsafeLaneChange": 450}
+    fine_base = {
+        "Speeding": 600,
+        "RedLight": 900,
+        "Seatbelt": 220,
+        "PhoneUse": 320,
+        "UnsafeLaneChange": 450,
+    }
     age_bands = ["<18", "18-25", "26-35", "36-45", "46-60", "60+"]
     age_probs = [0.02, 0.24, 0.30, 0.20, 0.18, 0.06]
     for i, idx in enumerate(selected_violation_rows):
         row = road_days.iloc[int(idx)]
-        overspeed_ratio = float(np.clip((row["p95_speed_target"] - row["speed_limit"]) / max(row["speed_limit"], 1), 0, 0.7))
+        overspeed_ratio = float(
+            np.clip(
+                (row["p95_speed_target"] - row["speed_limit"]) / max(row["speed_limit"], 1), 0, 0.7
+            )
+        )
         violation_probs = np.array(
             [
                 0.35 + (0.55 * overspeed_ratio),
@@ -373,16 +457,28 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
         violation_rows.append(
             {
                 "violation_id": f"V{i:07d}",
-                "date_time": _sample_datetimes_for_date(row["date"], 1, rng, SENSOR_HOUR_WEIGHTS)[0],
+                "date_time": _sample_datetimes_for_date(row["date"], 1, rng, SENSOR_HOUR_WEIGHTS)[
+                    0
+                ],
                 "road_id": row["road_id"],
                 "violation_type": violation_type,
-                "fine_amount": int(np.clip(rng.normal(fine_base[violation_type], fine_base[violation_type] * 0.18), 100, 2200)),
+                "fine_amount": int(
+                    np.clip(
+                        rng.normal(fine_base[violation_type], fine_base[violation_type] * 0.18),
+                        100,
+                        2200,
+                    )
+                ),
                 "driver_age_band": str(rng.choice(age_bands, p=age_probs)),
             }
         )
     df_vio = pd.DataFrame(violation_rows)
 
-    weather_risk = road_days["weather_mode"].map({"Clear": 0.00, "Dust": 0.20, "Rain": 0.38, "Fog": 0.52}).fillna(0.0)
+    weather_risk = (
+        road_days["weather_mode"]
+        .map({"Clear": 0.00, "Dust": 0.20, "Rain": 0.38, "Fog": 0.52})
+        .fillna(0.0)
+    )
     overspeed_norm = np.clip(overspeed_excess / 35.0, 0, 1.4)
     volume_norm = road_days["daily_volume_target"] / road_days["daily_volume_target"].quantile(0.95)
     violation_norm = road_days["simulated_violations_per_1000_volume"] / max(
@@ -407,18 +503,30 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
     )
     accident_weights = np.clip(accident_pressure.to_numpy(dtype=float), 0.01, None)
     accident_weights = accident_weights / accident_weights.sum()
-    selected_accident_rows = rng.choice(road_days.index.to_numpy(), size=cfg.accidents, replace=True, p=accident_weights)
+    selected_accident_rows = rng.choice(
+        road_days.index.to_numpy(), size=cfg.accidents, replace=True, p=accident_weights
+    )
 
     accident_rows: list[dict[str, object]] = []
     severity_scores: list[float] = []
     for i, idx in enumerate(selected_accident_rows):
         row = road_days.iloc[int(idx)]
         row_risk = float(accident_pressure[int(idx)])
-        night_bias = float(np.clip((weather_risk.iloc[int(idx)] * 0.45) + (road_type_risk.iloc[int(idx)] * 0.18), 0.0, 0.42))
+        night_bias = float(
+            np.clip(
+                (weather_risk.iloc[int(idx)] * 0.45) + (road_type_risk.iloc[int(idx)] * 0.18),
+                0.0,
+                0.42,
+            )
+        )
         date_time = _sample_accident_timestamp(row["date"], rng, night_bias=night_bias)
         lighting = "Night" if (date_time.hour >= 18 or date_time.hour < 6) else "Day"
         vehicles_involved = int(np.clip(rng.poisson(1.3 + (row_risk * 2.2)) + 1, 1, 8))
-        injuries = int(np.clip(rng.poisson(0.15 + (row_risk * 1.25) + (0.18 if lighting == "Night" else 0.0)), 0, 6))
+        injuries = int(
+            np.clip(
+                rng.poisson(0.15 + (row_risk * 1.25) + (0.18 if lighting == "Night" else 0.0)), 0, 6
+            )
+        )
         fatality_prob = float(
             np.clip(
                 0.005
@@ -429,7 +537,9 @@ def generate_all(out_dir: Path, cfg: GenConfig = GenConfig()) -> None:
                 0.35,
             )
         )
-        fatalities = int(np.clip(rng.binomial(1, fatality_prob) + rng.binomial(1, fatality_prob * 0.35), 0, 2))
+        fatalities = int(
+            np.clip(rng.binomial(1, fatality_prob) + rng.binomial(1, fatality_prob * 0.35), 0, 2)
+        )
         severity_score = (
             (row_risk * 1.35)
             + (injuries * 0.20)
