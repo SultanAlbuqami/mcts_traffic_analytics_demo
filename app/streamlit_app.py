@@ -157,9 +157,36 @@ required_files = [
 ]
 missing_files = [path for path in required_files if not path.exists()]
 if missing_files:
-    st.error("Required demo artifacts are missing.")
-    st.code("python -m traffic_analytics_demo.cli all")
-    st.stop()
+    import subprocess
+
+    with st.spinner("Building demo data — this takes ~60 seconds on first run..."):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "traffic_analytics_demo.cli",
+                "all",
+                "--days",
+                "30",
+                "--seed",
+                "42",
+                "--road-segments",
+                "24",
+                "--accidents",
+                "500",
+                "--violations",
+                "1600",
+                "--sensors-rows",
+                "5000",
+            ],
+            capture_output=True,
+            text=True,
+        )
+    if result.returncode != 0:
+        st.error("Pipeline failed to build demo artifacts. See details below.")
+        st.code(result.stderr[-3000:] if result.stderr else result.stdout[-3000:])
+        st.stop()
+    st.rerun()
 
 accidents = load_csv(processed_dir / "accidents.csv", parse_dates=["date_time"])
 roads = load_csv(processed_dir / "roads.csv")
