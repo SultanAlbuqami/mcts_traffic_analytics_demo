@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e .
+
+      - name: Compile sources
+        run: python -m compileall src app
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Build demo outputs
+        run: python -m traffic_analytics_demo.cli all --days 30 --seed 7 --road-segments 24 --accidents 500 --violations 1600 --sensors-rows 5000
+
+      - name: Streamlit smoke test
+        run: |
+          python -c "from pathlib import Path; from streamlit.testing.v1 import AppTest; app_path = Path('app/streamlit_app.py').resolve(); at = AppTest.from_file(str(app_path)); at.run(timeout=120); assert len(at.exception) == 0; assert len(at.error) == 0"
